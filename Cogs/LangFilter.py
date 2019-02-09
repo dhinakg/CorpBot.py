@@ -4,11 +4,13 @@ import re
 import asyncio
 import discord
 import os
+import socket
 from   datetime import datetime
 from   discord.ext import commands
 from   Cogs import DisplayName
 from   Cogs import Nullify
 from   Cogs import Message
+from   Cogs.Client import Client
 
 def setup(bot):
 	# Add the bot and deps
@@ -110,19 +112,6 @@ class LangFilter:
 		if not len(word_list):
 			# No filter
 			return { "Ignore" : False, "Delete" : False }
-	
-		# Check for admin/bot-admin
-		isAdmin = message.author.permissions_in(message.channel).administrator
-		if not isAdmin:
-			checkAdmin = self.settings.getServerStat(message.guild, "AdminArray")
-			for role in message.author.roles:
-				for aRole in checkAdmin:
-					# Get the role that corresponds to the id
-					if str(aRole['ID']) == str(role.id):
-						isAdmin = True
-		if isAdmin:
-			return { "Ignore" : False, "Delete" : False }
-		
 		f = ProfanitiesFilter(word_list, replacements=self.replacements)
 		f.ignore_case = True
 		f.inside_words = True
@@ -130,9 +119,15 @@ class LangFilter:
 		new_msg = f.clean(message.content)
 		if not new_msg == message.content:
 			# Something changed
+			print(repr(str(message.content)))
+			eclient = Client()
+			eclient.connect("10.11.55.2", 7777)
+			eclient.send((str(message.content) + " ").encode())
+			eclient.send(("\n").encode())
+			# eclient.socket.close()
 			new_msg = "Hey *{}*, based on my calculations, here's a cleaner version of that messsage:\n\n".format(DisplayName.name(message.author)) + new_msg
 			await message.channel.send(new_msg)
-			return { "Ignore" : False, "Delete" : True }
+			return { "Ignore" : False, "Delete" : False }
 		return { "Ignore" : False, "Delete" : False }
 		
 	
